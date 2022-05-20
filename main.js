@@ -42,7 +42,13 @@
 */
 
 (function() {
+    function changeSubject(subject) {
+        subject.tema.descripcion = subject.tema.descripcion_editable;
+        return subject
+    }
+  
     function changeItem(item) {
+        item.descripcion = item.descripcion_editable;
         item.contenido = item.contenido_editable;
         item.childs = item.childs.map((child) => changeItem(child))
         return item
@@ -53,10 +59,11 @@
       // Tampoco procesamos scripts que no tengan la linea de los items
       if (e.target.src || !e.target.innerHTML.match(/\s*items\s*:\s*\[/)) {
         return;
-	  }
+  	  }
 
       var originalSourceCode = e.target.innerHTML;
 
+      // Cambiamos las intervenciones
       var itemsRegex = /\n\s*items\s*:\s*(\[.+),[\n$]/
       var originalItemsLine = itemsRegex.exec(originalSourceCode)[1]
       var originalItems = JSON.parse(originalItemsLine)
@@ -64,8 +71,17 @@
       var newItems = originalItems.map((item) => changeItem(item))
       var newItemsLine = JSON.stringify(newItems)
 
+      // Cambiamos el tema propiamente dicho
+      var subjectRegex = /var tema_render[^(]+\((.+)\);[\n$]/
+      var originalSubjectLine = subjectRegex.exec(originalSourceCode)[1]
+      var originalSubject = JSON.parse(originalSubjectLine)
+      
+      var newSubject = changeSubject(originalSubject)
+      var newSubjectLine = JSON.stringify(newSubject)
+      
       // Reemplazamos los viejos items con los nuevos
       e.target.innerHTML = originalSourceCode.replace(originalItemsLine, newItemsLine)
+                                             .replace(originalSubjectLine, newSubjectLine)
 
     });
   
